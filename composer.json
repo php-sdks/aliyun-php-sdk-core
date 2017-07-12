@@ -14,7 +14,7 @@
     },
     "autoload": {
         "files": [
-            "Autoloader/Autoloader.php"
+            "Config.php"
         ]
     }
 }
