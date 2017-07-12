@@ -1,0 +1,20 @@
+{
+    "name": "aliyun/aliyun-php-sdk-core",
+    "description": "Aliyun PHP SDK Core for composer",
+    "keywords": ["aliyun"],
+    "authors": [
+        {
+            "name": "Alibaba",
+            "email": "developer@aliyun.com",
+            "homepage": "https://www.aliyun.com/"
+        }
+    ],
+    "require": {
+        "php": ">=5.3"
+    },
+    "autoload": {
+        "files": [
+            "Autoloader/Autoloader.php"
+        ]
+    }
+}
