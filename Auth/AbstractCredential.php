@@ -17,14 +17,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-include_once '../../Config.php';
-
-class ShaHmac256SignerTest extends PHPUnit_Framework_TestCase
+abstract class AbstractCredential
 {
-    public function testShaHmac256Signer()
-    {
-        $signer = new ShaHmac256Signer();
-        $this->assertEquals("TpF1lE/avV9EHGWGg9Vo/QTd2bLRwFCk9jjo56uRbCo=",
-            $signer->signString("this is a ShaHmac256 test.", "accessSecret"));
-    }
+    abstract public function getAccessKeyId();
+    abstract public function getAccessSecret();
+    abstract public function getSecurityToken();
 }

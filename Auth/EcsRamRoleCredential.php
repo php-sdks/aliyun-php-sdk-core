@@ -17,14 +17,36 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-include_once '../../Config.php';
-
-class ShaHmac256SignerTest extends PHPUnit_Framework_TestCase
+class EcsRamRoleCredential extends AbstractCredential
 {
-    public function testShaHmac256Signer()
+    private $roleName;
+
+    public function __construct($roleName)
     {
-        $signer = new ShaHmac256Signer();
-        $this->assertEquals("TpF1lE/avV9EHGWGg9Vo/QTd2bLRwFCk9jjo56uRbCo=",
-            $signer->signString("this is a ShaHmac256 test.", "accessSecret"));
+        $this->roleName = $roleName;
+    }
+
+    public function getAccessKeyId()
+    {
+        return null;
+    }
+
+    public function getAccessSecret()
+    {
+        return null;
+    }
+
+    public function getRoleName()
+    {
+        return $this->roleName;
+    }
+
+    public function setRoleName($roleName)
+    {
+        $this->roleName = $roleName;
+    }
+
+    public function getSecurityToken() {
+        return null;
     }
 }

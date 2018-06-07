@@ -17,6 +17,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
+define("AUTH_TYPE_RAM_AK", "RAM_AK");
+define("AUTH_TYPE_RAM_ROLE_ARN", "RAM_ROLE_ARN");
+define("AUTH_TYPE_ECS_RAM_ROLE", "ECS_RAM_ROLE");
+
 class DefaultProfile implements IClientProfile
 {
 	private static $profile;
@@ -24,22 +29,38 @@ class DefaultProfile implements IClientProfile
 	private static $credential;
 	private static $regionId;
 	private static $acceptFormat;
+	private static $authType;
 	
 	private static $isigner;
 	private static $iCredential;
 	
-	private function  __construct($regionId,$credential)
+	private function  __construct($regionId, $credential, $authType = AUTH_TYPE_RAM_AK)
 	{
 	    self::$regionId = $regionId;
 	    self::$credential = $credential;
+	    self::$authType = $authType;
 	}
 	
-	public static function getProfile($regionId, $accessKeyId, $accessSecret)
+	public static function getProfile($regionId, $accessKeyId, $accessSecret, $securityToken = null)
 	{
-		$credential =new Credential($accessKeyId, $accessSecret);
+		$credential =new Credential($accessKeyId, $accessSecret, $securityToken);
 		self::$profile = new DefaultProfile($regionId, $credential);
 		return self::$profile;
 	}
+
+    public static function getRamRoleArnProfile($regionId, $accessKeyId, $accessSecret, $roleArn, $roleSessionName)
+    {
+        $credential =new RamRoleArnCredential($accessKeyId, $accessSecret, $roleArn, $roleSessionName);
+        self::$profile = new DefaultProfile($regionId, $credential, AUTH_TYPE_RAM_ROLE_ARN);
+        return self::$profile;
+    }
+
+    public static function getEcsRamRoleProfile($regionId, $roleName)
+    {
+        $credential =new EcsRamRoleCredential($roleName);
+        self::$profile = new DefaultProfile($regionId, $credential, AUTH_TYPE_ECS_RAM_ROLE);
+        return self::$profile;
+    }
 	
 	public function getSigner()
 	{
@@ -68,6 +89,24 @@ class DefaultProfile implements IClientProfile
 		}
 		return self::$credential;
 	}
+
+    public function isRamRoleArn()
+    {
+        if(self::$authType == AUTH_TYPE_RAM_ROLE_ARN)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public function isEcsRamRole()
+    {
+        if(self::$authType == AUTH_TYPE_ECS_RAM_ROLE)
+        {
+            return true;
+        }
+        return false;
+    }
 	
 	public static function getEndpoints()
 	{
@@ -93,6 +132,8 @@ class DefaultProfile implements IClientProfile
 		{
 			self::updateEndpoint($regionId, $product, $domain, $endpoint);
 		}
+
+		LocationService::addEndPoint($regionId, $product, $domain);
 	}
 	
 	public static function findEndpointByName($endpointName)
@@ -109,8 +150,8 @@ class DefaultProfile implements IClientProfile
 	private static function addEndpoint_($endpointName,$regionId, $product, $domain)
 	{
 		$regionIds = array($regionId);
-		$productDomains = array(new ProductDomain($product, $domain));
-		$endpoint = new Endpoint($endpointName, $regionIds, $productDomains);
+		$productsDomains = array(new ProductDomain($product, $domain));
+		$endpoint = new Endpoint($endpointName, $regionIds, $productsDomains);
 		array_push(self::$endpoints, $endpoint);
 	}
 	
@@ -123,24 +164,22 @@ class DefaultProfile implements IClientProfile
 			$endpoint->setRegionIds($regionIds);
 		}
 
-		$productDomains = $endpoint->getProductDomains();
-		if(null == self::findProductDomain($productDomains, $product, $domain))
-		{
-		 	array_push($productDomains, new ProductDomain($product, $domain));	
-		}
-		$endpoint->setProductDomains($productDomains);
-	}
-	
-	private static function findProductDomain($productDomains, $product, $domain)
-	{
-		foreach ($productDomains as $key => $productDomain)
-		{
-			if($productDomain->getProductName() == $product && $productDomain->getDomainName() == $domain)
-			{
-				return $productDomain;
-			}
-		}
-		return null;
-	}
+        $productDomains = $endpoint->getProductDomains();
+        if (null == self::findProductDomainAndUpdate($productDomains, $product, $domain)) {
+            array_push($productDomains, new ProductDomain($product, $domain));
+        }
 
+        $endpoint->setProductDomains($productDomains);
+    }
+    
+    private static function findProductDomainAndUpdate($productDomains, $product, $domain)
+    {
+        foreach ($productDomains as $key => $productDomain) {
+            if ($productDomain->getProductName() == $product) {
+                $productDomain->setDomainName($domain);
+                return $productDomain;
+            }
+        }
+        return null;
+    }
 }
